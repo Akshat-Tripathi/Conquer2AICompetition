@@ -1,5 +1,5 @@
-from basegame import basegame
-from util import default_rng
+from .basegame import basegame
+from .util import default_rng
 import numpy as np
 
 class game(basegame):
