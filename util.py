@@ -12,7 +12,7 @@ def default_rng(attackers, defenders, times):
     temp_a = attackers
     temp_d = defenders
     while times > 0 and temp_a > 0 and temp_d > 0:
-        da, dd = default_rng_helper(attackers, defenders)
+        da, dd = default_rng_helper(int(attackers), int(defenders))
         temp_a += da
         temp_d += dd
         times -= 1
@@ -22,8 +22,8 @@ def default_rng(attackers, defenders, times):
 
 #PRE: defenders > 0
 def default_rng_helper(attackers, defenders):
-    attackers = max(attackers, 3)
-    defenders = max(defenders, 2)
+    attackers = min(attackers, 3)
+    defenders = min(defenders, 2)
 
     attack = [0] * attackers
     defend = [0] * defenders
