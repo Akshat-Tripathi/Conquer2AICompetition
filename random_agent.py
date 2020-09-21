@@ -1,4 +1,3 @@
-from game import game
 from agent import agent
 
 from random import randint, seed
