@@ -1,4 +1,4 @@
-from agent import agent
+from .agent import agent
 
 from random import randint, seed
 

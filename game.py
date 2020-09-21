@@ -1,4 +1,4 @@
-from util import default_rng
+from .util import default_rng
 import numpy as np
 from collections import deque
 import random

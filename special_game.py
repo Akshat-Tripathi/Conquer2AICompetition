@@ -1,6 +1,6 @@
 #special_game is a type of game which shpws special troop requests in valid_actions
 
-from game import game, split_troops
+from .game import game, split_troops
 import numpy as np
 
 class special_game(game):
