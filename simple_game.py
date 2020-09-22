@@ -7,7 +7,6 @@ Created on Wed Aug 19 14:16:15 2020
 
 import numpy as np
 from .game import game
-from .util import load_countries
 
 class simple_game(game):
 

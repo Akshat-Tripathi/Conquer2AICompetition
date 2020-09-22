@@ -22,6 +22,10 @@ class special_game(game):
             deploys,
             np.array([[3, 0, 0]])
         )
-        split_troops_actions = np.vstack(i for i in map(lambda a: self._insert_special_requests(a, split_troops), [moves, deploys]) if i is not None)
         actions = np.vstack(i for i in tup if i is not None)
-        return np.vstack((np.hstack((actions, np.zeros((len(actions), 1)))), split_troops_actions))
+
+        special_moves = [i for i in map(lambda a: self._insert_special_requests(a, split_troops), [moves, deploys]) if i is not None]
+        if len(special_moves) != 0:
+            split_troops_actions = np.vstack(special_moves)
+            return np.vstack((np.hstack((actions, np.zeros((len(actions), 1)))), split_troops_actions))
+        return np.hstack((actions, np.zeros((len(actions), 1))))

@@ -10,7 +10,7 @@ split_troops = -1
 class game:
     initial_countries = 1
     initial_troops = 10
-    base_timer = 2
+    base_timer = 45
 
     def __init__(self, graph, num_players, validate_actions=False):
         self.graph = graph
@@ -50,9 +50,15 @@ class game:
                 return old_players
             self.timer -= 1
 
-    def _preprocess_troops(self, troops, player, array):
+    def _preprocess_troops(self, country, action_type, player, troops):
+        if action_type != 0: #deploy
+            array = self.state[country]
+            delta = 1
+        else:
+            array = self.players
+            delta = 0
         if troops == all_troops:
-            return array[player] - 1
+            return array[player] - delta
         if troops == split_troops:
             return array[player] // 2
         return troops
@@ -72,12 +78,12 @@ class game:
         return self._attack(src, dest, player, deltaSrc, deltaDest)        
 
     def deploy(self, dest, troops, player):
-        troops = self._preprocess_troops(troops, player, self.players)
+        troops = self._preprocess_troops(0, 0, player, troops)
         self.state[dest, player] += troops
         self.players[player] -= troops
     
     def move(self, src, dest, troops, player):
-        troops = self._preprocess_troops(troops, player, self.state[src])
+        troops = self._preprocess_troops(src, 2, player, troops)
         self.state[dest, player] += troops
         self.state[src, player] -= troops
 

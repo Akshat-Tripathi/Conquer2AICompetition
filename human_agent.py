@@ -7,12 +7,14 @@ class human_agent(agent):
     def step(self):
         if self.player in self.game.alive_players:
             action = self._select_action()
-            self.game.take_action(action, self.player)
+        return action
     
     def _select_action(self):
         troops = self.game.players[self.player]
         print(f"Player {self.player} has {troops} troops")
-        print(self.game.state)
+        
+        for (i, country) in enumerate(self.game.state):
+            print(f"{i}: {country}")
 
         action_type = int(input("Action type?\nDeploy: 0\nAttack: 1\nMove: 2\nSkip: 3\n"))
         src = int(input("Src\n"))
