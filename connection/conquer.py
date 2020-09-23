@@ -4,11 +4,11 @@ import requests
 import os
 import numpy as np
 import json
+import time
 
 from ..game import game
 
 ip_port = "192.168.1.2:8080"
-
 class conquer:
     def __init__(self, game):
         self.game = game
@@ -96,7 +96,14 @@ class conquer:
             msg["NumDest"] = int(troops)
 
         print(msg, action)
-        await ws.send(json.dumps(msg))
+        try:
+            await ws.send(json.dumps(msg))
+        except websockets.exceptions.ConnectionClosedError:
+            print("websocket bug")
+            time.sleep(5)
+            await self._connect(self.player_code_colours[player][0])
+            await ws.send(json.dumps(msg))
+
 
 
 print("Hi")
