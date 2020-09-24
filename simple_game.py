@@ -12,49 +12,19 @@ class simple_game(game):
 
     #this version of attack assumes 1 troop takes 1 troop
     def attack(self, src, dest, player):
-        dest_player = np.argmax(self.state[dest]) 
+        srcTroops = self.state[src]
+        destTroops = self.state[dest]
+        return self.simulate_attack(src, dest, player, srcTroops, destTroops)
 
-        source = self.state[src, player]
-        destination = self.state[dest, dest_player]
+    def _validate_attack(self, src, dest, player):
+        if super()._validate_attack(src, dest, player):
+            srcTroops = self.state[src]
+            destTroops = self.state[dest]
+            return srcTroops > destTroops
+        return False
 
-        delta = source - destination
-
-        self.state[dest, dest_player] = 0
-        if delta > 1:
-            self.state[src, player] = delta - 1
-            self.state[dest, player] = 1
-            if np.sum(self.state[:, dest_player]) == 0 and destination != 0:
-                self.alive_players.remove(dest_player)
-            if np.count_nonzero(self.state[:, player]) == len(self.graph):
-                return True
-        else:
-            self.state[src, player] = 1
-
-    def _valid_attacks(self, player):
-        # can only attack if troops > 1
-        my_countries = np.nonzero(self.state[:, player] > 1)[0]
-        if len(my_countries) == 0:
+    def get_valid_attacks(self, player):
+        attacks = super().get_valid_attacks(player)
+        if attacks is None:
             return None
-        attackable_countries = np.nonzero(self.state[:, player] == 0)[0]
-        if len(attackable_countries) == 0:
-            return None
-
-        #get all combos
-        combos = np.array(np.meshgrid(my_countries, attackable_countries)).T.reshape(-1, 2)
-        #Finds all valid neighbours
-        neighbours = self.graph[combos[:, 0], combos[:, 1]]
-        attacks = combos[np.nonzero(neighbours)]
-        if len(attacks) == 0:
-            return None
-        #srcTroops > destTroops + 1
-        attacks = attacks[np.max(self.state[attacks[:, 0]]) - np.max(self.state[attacks[:, 1]]) > 1]
-        if len(attacks) == 0:
-            return None
-        attacks = attacks[0]
-        return np.hstack((np.ones((len(attacks), 1)), attacks))
-    
-    def _simulate_action(self, action, player):
-        super()._simulate_action(action, player)
-    
-    def _take_action(self, action, player):
-        return super()._take_action(action, player)
+        return attacks[[self.state[int(attack[1])] > self.state[int(attack[2])] for attack in attacks]]

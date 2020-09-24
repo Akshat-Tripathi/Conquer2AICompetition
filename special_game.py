@@ -3,29 +3,23 @@
 from .game import game, split_troops
 import numpy as np
 
+def _set_array_last_column(array, value):
+    array[:, -1] = value
+
+#since 0 is already a special 
+def _insert_special_requests(actions, vals):
+    return np.vstack([actions] + [_set_array_last_column(np.copy(actions), val) for val in vals])
+
 class special_game(game):
 
-    def _insert_special_requests(self, actions, val):
-        if actions is None:
-            return None
-        cpy = np.copy(actions)
-        cpy = np.hstack((cpy, np.zeros((len(cpy), 1))))
-        cpy[:, -1] = val
-        return cpy
-
-    def valid_actions(self, player):
-        moves = self._valid_moves(player)
-        deploys = self._valid_deploys(player)
-        tup = (
-            self._valid_attacks(player),
-            moves,
-            deploys,
-            np.array([[3, 0, 0]])
-        )
-        actions = np.vstack(i for i in tup if i is not None)
-
-        special_moves = [i for i in map(lambda a: self._insert_special_requests(a, split_troops), [moves, deploys]) if i is not None]
-        if len(special_moves) != 0:
-            split_troops_actions = np.vstack(special_moves)
-            return np.vstack((np.hstack((actions, np.zeros((len(actions), 1)))), split_troops_actions))
-        return np.hstack((actions, np.zeros((len(actions), 1))))
+    def get_valid_moves(self, player: int):
+        return _insert_special_requests(super().get_valid_moves(player), [split_troops])
+    
+    def get_valid_assists(self, player: int):
+        return _insert_special_requests(super().get_valid_assists(player), [split_troops])
+    
+    def get_valid_deployments(self, player: int):
+        return _insert_special_requests(super().get_valid_deployments(player), [split_troops])
+    
+    def get_valid_donations(self, player: int):
+        return _insert_special_requests(super().get_valid_donations(player), [split_troops])
