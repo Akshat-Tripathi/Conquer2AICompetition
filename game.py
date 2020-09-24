@@ -22,6 +22,7 @@ class game:
         self.num_players = num_players
         self.win_countries = len(graph)
         self.timer = timer
+        self.timer.add_event(self._update_troops)
         
         self.initial_countries = initial_countries
         self.initial_troops = initial_troops
