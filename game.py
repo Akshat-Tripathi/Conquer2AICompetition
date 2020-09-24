@@ -12,9 +12,6 @@ _validate_actions = False
 def set_validate_actions(val: bool):
     _validate_actions = val
 
-# def validation(f):
-#     def wrapper
-
 class game:
     def __init__(self, graph, num_players, timer, 
                 initial_countries=1, initial_troops=10):
