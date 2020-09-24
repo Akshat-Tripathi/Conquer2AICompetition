@@ -15,7 +15,6 @@ def load_countries(filename):
     with open(filename, "r") as file:
         tokens = list(filter(lambda s: s != "", set(file.read().replace("\n", " ").split(" "))))
         tokens.sort()
-        print(tokens)
         world = np.zeros((len(tokens), len(tokens)))
         file.seek(0)
         for line in file.readlines():

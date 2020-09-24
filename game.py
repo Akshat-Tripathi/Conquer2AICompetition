@@ -176,7 +176,7 @@ class game:
     
     def _validate_deploy(self, dest, player, troops):
         t = self.players[player]
-        #check that the player has the troops to move
+        #check that the player has the troops to deploy
         if t < troops or troops < 0:
             return False
         #check that the player owns the destination

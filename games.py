@@ -1,3 +1,4 @@
+from typing import List
 from .util import default_rng
 import numpy as np
 import random
@@ -6,16 +7,22 @@ import random
 all_troops = 0
 split_troops = -1
 
+_validate_actions = False
+
+def set_validate_actions(val: bool):
+    _validate_actions = val
+
+# def validation(f):
+#     def wrapper
+
 class games:
     def __init__(self, graph, num_players, timer, 
-                validate_actions=False, initial_countries=1,
-                initial_troops=10):
+                initial_countries=1, initial_troops=10):
         self.graph = graph
         self.num_players = num_players
         self.win_countries = len(graph)
         self.timer = timer
         
-        self.validate_actions = validate_actions
         self.initial_countries = initial_countries
         self.initial_troops = initial_troops
 
@@ -33,7 +40,7 @@ class games:
             countries = self.initial_countries
             while countries:
                 index = random.randint(0, self.win_countries - 1)
-                if not np.sum(self.ownership[index]):
+                if not self.ownership[index]:
                     self.set_owner(index, i)
                     countries -= 1
 
@@ -42,15 +49,21 @@ class games:
         self.players = [{
             "troops": self.initial_troops,
             "countries": self.initial_countries
-        } for i in range(len(self.num_players))]
+        } for i in range(self.num_players)]
 
-    def set_owner(self, country, player):
+    def set_owner(self, country: int, player: int):
         self.ownership[country] = player + 1
     
-    def get_owner(self, country):
+    def get_owner(self, country: int) -> int:
         return self.ownership[country] - 1
     
-    def _preprocess_action(self, action, player):
+    def get_countries_owned_by(self, player: int) -> List[int]:
+        return np.argwhere(self.ownership == player + 1)
+    
+    def get_countries_not_owned_by(self, player) -> List[int]:
+        return np.argwhere(self.ownership != player + 1)
+
+    def _preprocess_action(self, action, player: int):
         action_type, src, _, troops = action
         if action_type == 0: #deploy
             current_troops = self.players[player]["troops"]
@@ -65,10 +78,25 @@ class games:
         return troops
 
 
-    
-    def attack(self, src, dest, player):
+    def take_action(self, action, player: int) -> bool:
+        action_type, src, dest, _ = action
         src = int(src)
         dest = int(dest)
+        troops = self._preprocess_action(action, player)
+
+        if action_type == 0:
+            return self.deploy(dest, troops, player)
+        elif action_type == 1:
+            return self.attack(src, dest, player)
+        elif action_type == 2:
+            return self.move(src, dest, troops, player)
+        elif action_type == 3:
+            return self.assist(src, dest, troops, player)
+        elif action_type == 4:
+            return self.donate(player, dest, troops)
+        return False
+    
+    def attack(self, src: int, dest: int, player) -> bool:
         srcTroops = self.state[src]
         destTroops = self.state[dest]
 
@@ -79,7 +107,7 @@ class games:
         
         return self.simulate_attack(src, dest, player, deltaSrc, deltaDest)
     
-    def simulate_attack(self, src, dest, player, deltaSrc, deltaDest):
+    def simulate_attack(self, src, dest, player, deltaSrc, deltaDest) -> bool:
         srcTroops = self.state[src] + deltaSrc
         destTroops = self.state[dest] + deltaDest
 
@@ -104,61 +132,186 @@ class games:
         self.state[src] = srcTroops
         return won
 
-    def deploy(self, dest, troops, player):
+    def deploy(self, dest: int, troops: int, player: int) -> bool:
         troops = self._preprocess_action([0, 0, 0, troops], player)
         self.state[dest] += troops
         self.players[player]["troops"] -= troops
         return False
     
-    def move(self, src, dest, troops, player):
+    def move(self, src: int, dest: int, troops: int, player: int) -> bool:
         troops = self._preprocess_action([2, src, 0, troops], player)
         self.state[dest] += troops
         self.state[src] -= troops
         return False
     
-    def assist(self, src, dest, troops, player):
-        ...
+    def assist(self, src: int, dest: int, troops: int, player: int) -> bool:
+        return self.move(src, dest, troops, player)
     
-    def donate(self, player, recepient, troops):
-        ...
+    def donate(self, player: int, recepient: int, troops: int) -> bool:
+        troops = self._preprocess_action([0, 0, 0, troops], player)
+        self.players[recepient]["troops"] -= troops
+        self.players[player]["troops"] -= troops
+        return False
 
 
+    def take_valid_action(self, action, player: int) -> bool:
+        action_type, src, dest, _ = action
+        src = int(src)
+        dest = int(dest)
+        troops = self._preprocess_action(action, player)
 
-    def _validate_attack(self, src, dest, player):
-        ...
+        if action_type == 0:
+            if self._validate_deploy(dest, troops, player):
+                return self.deploy(dest, troops, player)
+        elif action_type == 1:
+            if self._validate_attack(src, dest, player):
+                return self.attack(src, dest, player)
+        elif action_type == 2:
+            if self._validate_move(src, dest, troops, player):
+                return self.move(src, dest, troops, player)
+        elif action_type == 3:
+            if self._validate_assist(src, dest, troops, player):
+                return self.assist(src, dest, troops, player)
+        elif action_type == 4:
+            if self._validate_donation(player, dest, troops):
+                return self.donate(player, dest, troops)
+        return False
+
+    def _validate_attack(self, src: int, dest: int, player: int) -> bool:
+        #check that the player owns the src
+        if self.get_owner(src) != player:
+            return False
+        #check that the player doesn't own the dest
+        if self.get_owner(dest) == player:
+            return False
+        #check that the player has enough troops to attack
+        if self.state[src] < 2:
+            return False
+        return True
+            
+    def _validate_deploy(self, dest: int, troops: int, player: int) -> bool:
+        t = self.players[player]["troops"]
+        #check that the player has the troops to deploy
+        if t < troops or troops < 0:
+            return False
+        #check that the player owns the destination
+        if self.get_owner(dest) != player:
+            return False
+        return True
     
-    def _validate_deploy(self, dest, troops, player):
-        ...
+    def _validate_move(self, src: int, dest: int, troops: int, player: int) -> bool:
+        t = self.state[src]
+        #check that the player has the troops to move
+        if t <= troops or troops < 0:
+            return False
+        #check that the player owns the src
+        if self.get_owner(src) != player:
+            return False
+        #check that the player owns the dest
+        if self.get_owner(dest) != player:
+            return False
+        return True
     
-    def _validate_move(self, src, dest, troops, player):
-        ...
-    
-    def _validate_assist(self, src, dest, troops, player):
-        ...
-    
-    def _validate_donate(self, player, recepient, troops):
-        ...
+    def _validate_assist(self, src: int, dest: int, troops: int, player: int) -> bool:
+        t = self.state[src]
+        #check that the player has the troops to move
+        if t <= troops or troops < 0:
+            return False
+        #check that the player owns the src
+        if self.get_owner(src) != player:
+            return False
+        #check that the player doesn't the dest
+        if self.get_owner(dest) == player:
+            return False
+        return True
+
+    def _validate_donate(self, player: int, recepient: int, troops: int) -> bool:
+        #can't donate to self
+        if player == recepient:
+            return False
+        #must own enough troops
+        t = self.players[player]["troops"]
+        if t < troops or troops < 0:
+            return False
+        #can't donate to defeated players
+        if recepient in self.dead_players:
+            return False
+        return True
     
 
     def _update_troops(self):
-        ...
+        return [(3 + self.players[player]["troops"]) / 3 for player in range(self.num_players)]
 
 
+    def get_valid_attacks(self, player: int):
+        my_countries = self.get_countries_owned_by(player)
+        #can only attack if troops > 1
+        my_countries = my_countries[self.state[my_countries] > 1]
+        if len(my_countries) == 0:
+            return None
+        attackable_countries = self.get_countries_not_owned_by(player)
+        if len(attackable_countries) == 0:
+            return None
+        
+                #get all combos
+        combos = np.array(np.meshgrid(my_countries, attackable_countries)).T.reshape(-1, 2)
+        #Finds all valid neighbours
+        neighbours = self.graph[combos[:, 0], combos[:, 1]]
+        attacks = combos[np.nonzero(neighbours)]
+        if len(attacks) == 0:
+            return None
+        attacks = np.hstack((np.ones((len(attacks), 1)), attacks))
+        return np.hstack((attacks, np.zeros((len(attacks), 1))))
+    
+    def get_valid_deployments(self, player: int):
+        if self.players[player]["troops"] == 0:
+            return None
+        countries = self.get_countries_owned_by(player)
+        deployments = np.hstack((np.zeros((2, len(countries))), countries))
+        return np.hstack((deployments, np.zeros((len(deployments), 1))))
 
-    def get_valid_actions(self, player):
-        ...
-
-    def _valid_attacks(self, src, dest, player):
-        ...
+    def get_valid_moves(self, player: int):
+        my_countries = self.get_countries_owned_by(player)
+        #can only move if troops > 1
+        my_countries = my_countries[self.state[my_countries] > 1]
+        if len(my_countries) == 0:
+            return None
+        moveable_countries = self.get_countries_owned_by(player)
+        if len(moveable_countries) == 0:
+            return None
+        
+        #get all combos
+        combos = np.array(np.meshgrid(my_countries, moveable_countries)).T.reshape(-1, 2)
+        #Finds all valid neighbours
+        neighbours = self.graph[combos[:, 0], combos[:, 1]]
+        moves = combos[np.nonzero(neighbours)]
+        if len(moves) == 0:
+            return None
+        move_actions = np.hstack((np.ones((len(moves), 1)) * 2, moves)) #[2, src, dest]
+        return np.hstack((move_actions, np.zeros((len(move_actions), 1))))
     
-    def _valid_deployments(self, dest, troops, player):
-        ...
+    def get_valid_assists(self, player: int):
+        my_countries = self.get_countries_owned_by(player)
+        #can only assist if troops > 1
+        my_countries = my_countries[self.state[my_countries] > 1]
+        if len(my_countries) == 0:
+            return None
+        moveable_countries = self.get_countries_not_owned_by(player)
+        if len(moveable_countries) == 0:
+            return None
+        
+        #get all combos
+        combos = np.array(np.meshgrid(my_countries, moveable_countries)).T.reshape(-1, 2)
+        #Finds all valid neighbours
+        neighbours = self.graph[combos[:, 0], combos[:, 1]]
+        moves = combos[np.nonzero(neighbours)]
+        if len(moves) == 0:
+            return None
+        move_actions = np.hstack((np.ones((len(moves), 1)) * 3, moves)) #[3, src, dest]
+        return np.hstack((move_actions, np.zeros((len(move_actions), 1))))
     
-    def _valid_moves(self, src, dest, troops, player):
-        ...
-    
-    def _valid_assists(self, src, dest, troops, player):
-        ...
-    
-    def _valid_donationss(self, player, recepient, troops):
-        ...
+    def get_valid_donations(self, player: int):
+        if self.players[player]["troops"] == 0:
+            return None
+        return np.array([[4, 0, other_player, 0] for other_player in range(self.num_players)
+                                                 if other_player != player and other_player not in self.dead_players])
