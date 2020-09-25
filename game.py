@@ -78,8 +78,6 @@ class game:
 
     def take_action(self, action, player: int) -> bool:
         action_type, src, dest, _ = action
-        src = int(src)
-        dest = int(dest)
         troops = self._preprocess_action(action, player)
 
         if action_type == 0:
@@ -154,8 +152,6 @@ class game:
 
     def take_valid_action(self, action, player: int) -> bool:
         action_type, src, dest, _ = action
-        src = int(src)
-        dest = int(dest)
         troops = self._preprocess_action(action, player)
 
         if action_type == 0:
@@ -240,16 +236,29 @@ class game:
     def _update_troops(self):
         return [(3 + self.players[player]["troops"]) / 3 for player in range(self.num_players)]
 
+    def get_valid_actions(self, player: int, action_types=[0, 1, 2, 3, 4, 5]):
+        actions = enumerate([
+            self.get_valid_deployments(player),
+            self.get_valid_attacks(player),
+            self.get_valid_moves(player),
+            self.get_valid_assists(player),
+            self.get_valid_donations(player),
+            np.array([5, 0, 0, 0])
+        ])
+        actions = filter(lambda k: k[0] in action_types, actions)
+        
+        return np.vstack(tuple(actions))
+
 
     def get_valid_attacks(self, player: int):
         my_countries = self.get_countries_owned_by(player)
         #can only attack if troops > 1
         my_countries = my_countries[self.state[my_countries] > 1]
         if len(my_countries) == 0:
-            return None
+            return []
         attackable_countries = self.get_countries_not_owned_by(player)
         if len(attackable_countries) == 0:
-            return None
+            return []
         
                 #get all combos
         combos = np.array(np.meshgrid(my_countries, attackable_countries)).T.reshape(-1, 2)
@@ -257,26 +266,26 @@ class game:
         neighbours = self.graph[combos[:, 0], combos[:, 1]]
         attacks = combos[np.nonzero(neighbours)]
         if len(attacks) == 0:
-            return None
+            return []
         attacks = np.hstack((np.ones((len(attacks), 1)), attacks))
-        return np.hstack((attacks, np.zeros((len(attacks), 1))))
+        return np.hstack((attacks, np.zeros((len(attacks), 1)))).astype(int)
     
     def get_valid_deployments(self, player: int):
         if self.players[player]["troops"] == 0:
-            return None
+            return []
         countries = self.get_countries_owned_by(player)
         deployments = np.hstack((np.zeros((len(countries), 2)), countries))
-        return np.hstack((deployments, np.zeros((len(deployments), 1))))
+        return np.hstack((deployments, np.zeros((len(deployments), 1)))).astype(int)
 
     def get_valid_moves(self, player: int):
         my_countries = self.get_countries_owned_by(player)
         #can only move if troops > 1
         my_countries = my_countries[self.state[my_countries] > 1]
         if len(my_countries) == 0:
-            return None
+            return []
         moveable_countries = self.get_countries_owned_by(player)
         if len(moveable_countries) == 0:
-            return None
+            return []
         
         #get all combos
         combos = np.array(np.meshgrid(my_countries, moveable_countries)).T.reshape(-1, 2)
@@ -284,19 +293,19 @@ class game:
         neighbours = self.graph[combos[:, 0], combos[:, 1]]
         moves = combos[np.nonzero(neighbours)]
         if len(moves) == 0:
-            return None
+            return []
         move_actions = np.hstack((np.ones((len(moves), 1)) * 2, moves)) #[2, src, dest]
-        return np.hstack((move_actions, np.zeros((len(move_actions), 1))))
+        return np.hstack((move_actions, np.zeros((len(move_actions), 1)))).astype(int)
     
     def get_valid_assists(self, player: int):
         my_countries = self.get_countries_owned_by(player)
         #can only assist if troops > 1
         my_countries = my_countries[self.state[my_countries] > 1]
         if len(my_countries) == 0:
-            return None
+            return []
         moveable_countries = self.get_countries_not_owned_by(player)
         if len(moveable_countries) == 0:
-            return None
+            return []
         
         #get all combos
         combos = np.array(np.meshgrid(my_countries, moveable_countries)).T.reshape(-1, 2)
@@ -304,12 +313,20 @@ class game:
         neighbours = self.graph[combos[:, 0], combos[:, 1]]
         moves = combos[np.nonzero(neighbours)]
         if len(moves) == 0:
-            return None
+            return []
         move_actions = np.hstack((np.ones((len(moves), 1)) * 3, moves)) #[3, src, dest]
-        return np.hstack((move_actions, np.zeros((len(move_actions), 1))))
+        return np.hstack((move_actions, np.zeros((len(move_actions), 1)))).astype(int)
     
     def get_valid_donations(self, player: int):
         if self.players[player]["troops"] == 0:
-            return None
+            return []
         return np.array([[4, 0, other_player, 0] for other_player in range(self.num_players)
-                                                 if other_player != player and other_player not in self.dead_players])
+                                                 if other_player != player and other_player not in self.dead_players]).astype(int)
+    
+    def copy(self):
+        g = game(self.graph, self.num_players, self.timer, 0, 0)
+        g.dead_players = self.dead_players.copy()
+        g.state = np.copy(self.state)
+        g.ownership = np.copy(self.ownership)
+        g.players = self.players.copy()
+        return g
