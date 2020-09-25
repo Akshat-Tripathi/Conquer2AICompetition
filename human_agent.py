@@ -5,23 +5,25 @@ import numpy as np
 class human_agent(agent):
 
     def step(self):
-        if self.player in self.game.alive_players:
+        if self.player not in self.game.dead_players:
             action = self._select_action()
         return action
     
     def _select_action(self):
-        troops = self.game.players[self.player]
+        troops = self.game.players[self.player]["troops"]
         print(f"Player {self.player} has {troops} troops")
         
-        for (i, country) in enumerate(self.game.state):
-            print(f"{i}: {country}")
+        for (i, (troops, owner)) in enumerate(zip(self.game.state, self.game.ownership)):
+            print(f"Country: {i} has {troops} troops and is owned by {owner}")
 
         action_type = int(input("Action type?\nDeploy: 0\nAttack: 1\nMove: 2\nSkip: 3\n"))
         src = int(input("Src\n"))
         dest = int(input("Dest\n"))
+        troops = int(input("Troops\n"))
         
-        action = [action_type, src, dest, 0]
-        if not any(np.array_equal(x, action) for x in self.game.valid_actions(self.player)):
+        action = [action_type, src, dest, troops]
+        valid_actions = self.game.get_valid_actions(self.player)
+        if not any(np.array_equal(x, action) for x in valid_actions):
             print("Invalid action")
             self._select_action()
             
