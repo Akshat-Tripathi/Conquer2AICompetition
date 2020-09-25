@@ -323,8 +323,10 @@ class game:
         return np.array([[4, 0, other_player, 0] for other_player in range(self.num_players)
                                                  if other_player != player and other_player not in self.dead_players]).astype(int)
     
-    def copy(self):
-        g = game(self.graph, self.num_players, self.timer, 0, 0)
+    def copy(self, clas=None):
+        if clas is None:
+            clas = game
+        g = clas(self.graph, self.num_players, self.timer, 0, 0)
         g.dead_players = self.dead_players.copy()
         g.state = np.copy(self.state)
         g.ownership = np.copy(self.ownership)

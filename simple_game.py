@@ -28,3 +28,6 @@ class simple_game(game):
         if attacks is None:
             return None
         return attacks[[self.state[int(attack[1])] > self.state[int(attack[2])] for attack in attacks]]
+    
+    def copy(self):
+        return super().copy(simple_game)
