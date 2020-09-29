@@ -1,5 +1,6 @@
 from typing import List
 from .util import default_rng
+from .timer import turn_timer
 import numpy as np
 import random
 
@@ -30,9 +31,9 @@ class game:
         self.timer.reset()
 
         #state represents how many troops each country has
-        self.state = np.zeros((self.win_countries,))
+        self.state = np.zeros((self.win_countries,)).astype(int)
         #ownership represents who owns which country (player + 1)
-        self.ownership = np.zeros((self.win_countries,))
+        self.ownership = np.zeros((self.win_countries,)).astype(int)
         
         for i in range(self.num_players):
             countries = self.initial_countries
@@ -77,8 +78,7 @@ class game:
 
 
     def take_action(self, action, player: int) -> bool:
-        action_type, src, dest, _ = action
-        troops = self._preprocess_action(action, player)
+        action_type, src, dest, troops = action
 
         if action_type == 0:
             return self.deploy(dest, troops, player)
@@ -117,9 +117,10 @@ class game:
             dest_player = self.get_owner(dest)
             self.set_owner(dest, player)
             self.players[player]["countries"] += 1
-            self.players[dest_player]["countries"] -= 1
+            if dest_player != -1:
+                self.players[dest_player]["countries"] -= 1
 
-            if self.players[dest_player]["countries"] == 0:
+            if dest_player != -1 and self.players[dest_player]["countries"] == 0:
                 self.dead_players += [dest_player]
             if self.players[player]["countries"] == self.win_countries:
                 won = True
@@ -234,7 +235,8 @@ class game:
     
 
     def _update_troops(self):
-        return [(3 + self.players[player]["troops"]) / 3 for player in range(self.num_players)]
+        for player in range(self.num_players):
+            self.players[player]["troops"] += 3 + (self.players[player]["countries"] // 3)
 
     def get_valid_actions(self, player: int, action_types=[0, 1, 2, 3, 4, 5]):
         actions = enumerate([
@@ -246,6 +248,8 @@ class game:
             np.array([5, 0, 0, 0])
         ])
         actions = filter(lambda k: k[0] in action_types, actions)
+        actions = filter(lambda k: len(k[1]) != 0, actions)
+        actions = map(lambda k: k[1], actions)
         
         return np.vstack(tuple(actions))
 
@@ -260,7 +264,7 @@ class game:
         if len(attackable_countries) == 0:
             return []
         
-                #get all combos
+        #get all combos
         combos = np.array(np.meshgrid(my_countries, attackable_countries)).T.reshape(-1, 2)
         #Finds all valid neighbours
         neighbours = self.graph[combos[:, 0], combos[:, 1]]
@@ -326,9 +330,11 @@ class game:
     def copy(self, clas=None):
         if clas is None:
             clas = game
-        g = clas(self.graph, self.num_players, self.timer, 0, 0)
+        t = turn_timer(self.timer.interval)
+        t.now = self.timer.now
+        g = clas(self.graph, self.num_players, t, 0, 0)
         g.dead_players = self.dead_players.copy()
         g.state = np.copy(self.state)
         g.ownership = np.copy(self.ownership)
-        g.players = self.players.copy()
+        g.players = [player.copy() for player in self.players]
         return g

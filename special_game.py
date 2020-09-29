@@ -9,7 +9,7 @@ def _set_array_last_column(array, value):
 
 #since 0 is already a special 
 def _insert_special_requests(actions, vals):
-    if actions == []:
+    if len(actions) == 0:
         return []
     return np.vstack([actions] + [_set_array_last_column(np.copy(actions), val) for val in vals])
 
