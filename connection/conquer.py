@@ -41,7 +41,7 @@ class conquer:
             set_country("PO", self.game.players[player]["troops"], "#ffffff")
         else:
             self._set(src)
-            self._set(dest)
+        self._set(dest)
     
     def _set(self, country):
         troops = self.game.state[country]

@@ -4,10 +4,10 @@ BR;0;bffd;VE;PE;NA
 NG;0;qrst;WO;EO;SE;CH
 AF;0;nil;MI;RU;SI;PA
 AG;0;qrst;PE
-SF;0;dldb;NY;CA;AL;ME;MI
+SF;0;dldb;NY;CA;AL;ME
 JP;0;flkn;CH;UR
-NY;0;hkgo;CA;SF;ME;MI
-UK;0;kcxt;RO;SC;GR;IN
+NY;0;hkgo;CA;SF;ME
+UK;0;kcxt;RO;SC;GR
 MA;0;hkgo;WA;SA
 EG;0;bffd;MI;NA;WA
 SE;0;hkgo;NG;IN;PA;CH

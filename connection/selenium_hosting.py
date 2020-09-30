@@ -7,6 +7,7 @@ options = webdriver.ChromeOptions()
 driver = webdriver.Chrome(cwd + "/chromedriver.exe", chrome_options=options)
 
 driver.get(f"file://{cwd}/map.html")
+driver.fullscreen_window()
 
 def set_country(country_code, number, colour):
     driver.execute_script(f"""

@@ -92,7 +92,7 @@ class game:
             return self.donate(player, dest, troops)
         return False
     
-    def attack(self, src: int, dest: int, player) -> bool:
+    def attack(self, src: int, dest: int, player: int) -> bool:
         srcTroops = self.state[src]
         destTroops = self.state[dest]
 
