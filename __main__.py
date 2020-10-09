@@ -40,10 +40,7 @@ def play(agents, logging, output=None):
             return
 
 from game_utils.connection.conquer import conquer
-# time.sleep(2)
 if __name__ == "__main__":
-    probs = load_probs("combos.txt")
-    # g = simple_game(load_countries("./minimax/map.txt"), n_agents)
     t = turn_timer(60)
     g = special_game(load_countries("game_utils/conquer_map.txt"), n_agents, t, 1, 10)
     c = conquer(g)

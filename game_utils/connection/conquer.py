@@ -1,6 +1,3 @@
-import asyncio
-import websockets
-import requests
 import os
 import numpy as np
 import json
@@ -9,7 +6,6 @@ import time
 from ..game import game
 from .selenium_hosting import driver, set_country
 
-ip_port = "192.168.1.2:8080"
 class conquer:
     def __init__(self, game):
         #get players and their colours
