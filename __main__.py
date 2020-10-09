@@ -1,9 +1,9 @@
-from .special_game import special_game
-from .util import load_countries, load_probs
-from .human_agent import human_agent
-from .random_agent import random_agent
-from .logger import logger
-from .timer import turn_timer
+from game_utils.special_game import special_game
+from game_utils.util import load_countries, load_probs
+from game_utils.human_agent import human_agent
+from game_utils.random_agent import random_agent
+from game_utils.logger import logger
+from game_utils.timer import turn_timer
 
 from random import seed
 from os import listdir
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     g = special_game(load_countries("game_utils/conquer_map.txt"), n_agents, t, 1, 10)
     c = conquer(g)
     log = logger()
-    # agents = [minimax_agent(g, 0, 2, probs)] + [random_agent(g, i) for i in range(1, n_agents)]
+    agents = [random_agent(g, i) for i in range(n_agents)]
     c.init_game()
 
     play(agents, log, c)
