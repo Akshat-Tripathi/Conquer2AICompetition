@@ -15,6 +15,8 @@ class update_message:
         self.player:str = dct["Player"]
         self.country:str = dct["Country"]
 
+action_types = ["deploy", "attack", "move", "assist", "donate"]
+
 def make_action(troops: int, action_type: str, src: str, dest: str):
     return f"{{\"Troops\": {troops}, \"ActionType\": \"{action_type}\", \"Src\": \"{src}\", \"Dest\": \"{dest}\"}}"
 class conquer2_adapter:
@@ -29,11 +31,13 @@ class conquer2_adapter:
     action = None #The message to be sent
     sent = asyncio.Semaphore(value=1)
 
-    def __init__(self, username: str, password: str, code: str, tokens):
+    def __init__(self, username: str, password: str, code: str, idx_to_country_name):
         self.username = username
         self.password = password
         self.code = code
-        self.country_name_to_idx = dict([(tokens[i], i) for i in range(len(tokens))])
+
+        self.idx_to_country_name = idx_to_country_name
+        self.country_name_to_idx = dict([(idx_to_country_name[i], i) for i in range(len(idx_to_country_name))])
 
         self.start_event = asyncio.Event()
         self.end_event = asyncio.Event()
@@ -68,7 +72,8 @@ class conquer2_adapter:
             return True
         if msg.type == "updateCountry":
             with self.countries_lock:
-                self.countries += [(self.country_name_to_idx[msg.country], msg.troops, self.players[msg.player])]
+                self.countries += [(self.country_name_to_idx[msg.country], 
+                    msg.troops, self.players[msg.player])]
         elif msg.type == "updateTroops":
             with self.troops_lock:
                 self.troops += msg.troops
@@ -83,7 +88,15 @@ class conquer2_adapter:
         return False
 
     async def send_command(self, action):
-        ...
+        action_type, src, dest, troops = action
+        if action_type == 5:
+            return
+        act = make_action(troops, action_types[action_type],
+            self.idx_to_country_name[src], self.idx_to_country_name[dest])
+        await self.sent.acquire()
+        with self.send_lock:
+            self.action = act
+            
 
     async def get_n_players(self):
         await self.start_event.wait()
