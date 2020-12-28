@@ -21,9 +21,9 @@ def load_countries(filename):
             countries = line[:-1].split(" ")
             for neighbour in countries[1:]:
                 world[tokens.index(countries[0]), tokens.index(neighbour)] = 1
-    return world
+    return world, tokens
 
-def load_probs(filename):
+def load_probs():
     with open("probs.json") as file:
         raw = json.loads(file.read())
         str2tup = lambda s: tuple(int(i) for i in s.replace("(", "")
