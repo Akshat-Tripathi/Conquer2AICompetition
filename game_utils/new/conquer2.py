@@ -18,7 +18,7 @@ class update_message:
 def make_action(troops: int, action_type: str, src: str, dest: str):
     return f"{{\"Troops\": {troops}, \"ActionType\": \"{action_type}\", \"Src\": \"{src}\", \"Dest\": \"{dest}\"}}"
 class conquer2_adapter:
-    players = []
+    players = {}
 
     troops_lock = asyncio.Lock()
     troops = 0
@@ -68,14 +68,14 @@ class conquer2_adapter:
             return True
         if msg.type == "updateCountry":
             with self.countries_lock:
-                self.countries += [(self.country_name_to_idx[msg.country], msg.troops, msg.player)]
+                self.countries += [(self.country_name_to_idx[msg.country], msg.troops, self.players[msg.player])]
         elif msg.type == "updateTroops":
             with self.troops_lock:
                 self.troops += msg.troops
         elif msg.type == "readyPlayer":
             pass
         elif msg.type == "newPlayer":
-            self.players += msg.player
+            self.players[msg.player] = len(self.players)
         elif msg.type == "start":
             self.start_event.set()
         else:
@@ -85,8 +85,14 @@ class conquer2_adapter:
     async def send_command(self, action):
         ...
 
-    async def get_initial_state(self):
-        ...
+    async def get_n_players(self):
+        await self.start_event.wait()
+        return len(self.players)
 
     async def get_state(self):
-        ...
+        await self.start_event.wait()
+        with self.countries_lock:
+            countries = self.countries
+        with self.troops_lock:
+            troops = self.troops
+        return troops, countries
