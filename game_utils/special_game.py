@@ -1,4 +1,4 @@
-#special_game is a type of game which shpws special troop requests in valid_actions
+#special_game is a type of game which shows special troop requests in valid_actions
 
 from .game import game, split_troops
 import numpy as np
