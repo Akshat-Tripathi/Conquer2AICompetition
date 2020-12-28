@@ -18,7 +18,7 @@ class dummy_timer:
         pass
 
 class conquer2_game(special_game):
-    def __init__(self, n_players: int, owners: List[:tuple[:str, :int]], initial_troops: int):
+    def __init__(self, n_players: int, owners: List[tuple], initial_troops: int):
         game_map, tokens = load_countries("game_utils/conquer2_map.txt")
         super().__init__(game_map, n_players, dummy_timer(), 0, initial_troops)
         
