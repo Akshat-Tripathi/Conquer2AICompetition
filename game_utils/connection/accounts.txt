@@ -1,8 +1,0 @@
-sdlr;#663399
-kcxt;#be90d4
-qrst;#d91e18
-hkgo;#4ecdc4
-bffd;#1f3a93
-flkn;#26a65b
-dldb;#f4d03f
-isdv;#d35400

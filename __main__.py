@@ -39,11 +39,11 @@ def play(agents, logging, output=None):
                 exit(0)
             return
 
-from game_utils.connection.conquer import conquer
+from game_utils.connection.conquer import conquer_adapter
 if __name__ == "__main__":
     t = turn_timer(60)
     g = special_game(load_countries("game_utils/conquer_map.txt"), n_agents, t, 1, 10)
-    c = conquer(g)
+    c = conquer_adapter(g)
     log = logger()
     agents = [random_agent(g, i) for i in range(n_agents)]
     c.init_game()
