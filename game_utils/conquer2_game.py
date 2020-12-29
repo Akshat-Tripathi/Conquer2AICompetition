@@ -18,13 +18,12 @@ class dummy_timer:
         pass
 
 class conquer2_game(special_game):
-    def __init__(self, n_players: int, owners: List[tuple], initial_troops: int):
-        game_map, tokens = load_countries("game_utils/conquer2_map.txt")
-        super().__init__(game_map, n_players, dummy_timer(), 0, initial_troops)
-        
-        self.country_name_to_idx = {}
-        for i in range(len(tokens)):
-            self.country_name_to_idx[tokens[i]] = i
-        
-        for (country, player_idx) in owners:
-            self.set_owner(self.country_name_to_idx[country], player_idx)
+    def __init__(self, n_players: int, game_map):
+        super().__init__(game_map, n_players, dummy_timer(), 0, 0)
+    
+    def set_troops(self, player, troops):
+        self.players[player]["troops"] = troops
+    
+    def update_country(self, country, troops, player):
+        self.state[country] += troops
+        self.set_owner(country, player)
