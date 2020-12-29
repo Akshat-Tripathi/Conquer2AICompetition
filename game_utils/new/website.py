@@ -45,13 +45,13 @@ class conquer2_adapter:
         if response.status_code != 200:
             raise ConnectionRefusedError("Unable to login to game")
     
+    
     async def manage_connection(self):
         url = conquer2_url.replace("http", "ws") + f"game/{self.code}/ws"
-        async with websockets.connect(url, extra_headers={"Cookie": f"username={self.username}; password={self.password}"}) as websocket:
-            self.websocket = websocket
-            await websocket.send(make_action(0, "imreadym9", "", ""))
-            asyncio.ensure_future(self._send(websocket))
-            asyncio.ensure_future(self._recv(websocket))
+        self.websocket = await websockets.connect(url, extra_headers={"Cookie": f"username={self.username}; password={self.password}"})
+        await self.websocket.send(make_action(0, "imreadym9", "", ""))
+        asyncio.ensure_future(self._send(self.websocket))
+        asyncio.ensure_future(self._recv(self.websocket))
 
     async def _send(self, websocket):
         while True:
@@ -60,20 +60,23 @@ class conquer2_adapter:
 
     async def _recv(self, websocket):
         while True:
-            print("waiting")
             msg = await websocket.recv()
             print(msg)
             msg = update_message(json.loads(msg))
             if msg.type == "won":
+                print("won")
                 self.end_event.set()
                 return True
+
             if msg.type == "updateCountry":
                 with await self.countries_lock:
                     self.countries += [(self.country_name_to_idx[msg.country], 
-                        msg.troops, self.players.setdefault(msg.player, len(self.players)))]
+                        msg.troops, msg.player)]
+
             elif msg.type == "updateTroops":
                 with await self.troops_lock:
                     self.troops += msg.troops
+            
             elif msg.type == "readyPlayer":
                 pass
             elif msg.type == "newPlayer":
@@ -83,7 +86,6 @@ class conquer2_adapter:
                 self.start_event.set()
             else:
                 raise ValueError("Unknown message received")
-            return False
 
     async def send_command(self, action):
         action_type, src, dest, troops = action
@@ -100,8 +102,9 @@ class conquer2_adapter:
 
     async def get_state(self):
         await self.start_event.wait()
-        with await  self.countries_lock:
-            countries = self.countries
+        with await self.countries_lock:
+            countries = self.countries.copy()
+            self.countries = []
         with await self.troops_lock:
             troops = self.troops
-        return troops, countries
+        return troops, list(map(lambda country: (country[0], country[1], self.players[country[2]]), countries))
