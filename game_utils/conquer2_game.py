@@ -27,3 +27,8 @@ class conquer2_game(special_game):
     def update_country(self, country, troops, player):
         self.state[country] += troops
         self.set_owner(country, player)
+
+    def get_valid_actions(self, player: int, action_types):
+        actions = super().get_valid_actions(player, action_types=action_types)
+        troops = map(lambda action: self._preprocess_action(action, player), actions)
+        return [(action[0], action[1], action[2], trps) for (action, trps) in zip(actions, troops)]

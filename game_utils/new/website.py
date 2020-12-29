@@ -1,12 +1,10 @@
-from requests import post, get
-# from ..conquer2_game import conquer2_game
+from requests import post
 import asyncio
 import json
 import websockets
 
 
-# conquer2_url = "https://conquer2.herokuapp.com/"
-conquer2_url = "http://localhost:8080/"
+conquer2_url = "https://conquer2.herokuapp.com/"
 
 class update_message:
     def __init__(self, dct):
@@ -61,7 +59,6 @@ class conquer2_adapter:
     async def _recv(self, websocket):
         while True:
             msg = await websocket.recv()
-            print(msg)
             msg = update_message(json.loads(msg))
             if msg.type == "won":
                 print("won")
