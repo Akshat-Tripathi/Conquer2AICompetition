@@ -5,6 +5,7 @@ import websockets
 
 
 conquer2_url = "https://conquer2.herokuapp.com/"
+# conquer2_url = "http://localhost:8080/"
 
 class update_message:
     def __init__(self, dct):
@@ -77,13 +78,15 @@ class conquer2_adapter:
             elif msg.type == "readyPlayer":
                 pass
             elif msg.type == "newPlayer":
-                self.players[msg.player] = len(self.players)
+                if msg.player not in self.players:
+                    self.players[msg.player] = len(self.players)
+                    print(self.players)
             elif msg.type == "start":
                 print("started")
                 self.start_event.set()
             else:
                 raise ValueError("Unknown message received")
-
+            
     async def send_command(self, action):
         action_type, src, dest, troops = action
         if action_type == 5:
@@ -104,4 +107,4 @@ class conquer2_adapter:
             self.countries = []
         with await self.troops_lock:
             troops = self.troops
-        return troops, list(map(lambda country: (country[0], country[1], self.players[country[2]]), countries))
+        return troops, list(map(lambda country: (country[0], country[1], self.players.setdefault(country[2], -1)), countries))

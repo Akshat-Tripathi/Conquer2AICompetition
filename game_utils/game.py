@@ -57,7 +57,7 @@ class game:
         return self.ownership[country] - 1
     
     def get_countries_owned_by(self, player: int) -> List[int]:
-        return np.argwhere(self.ownership == player + 1)
+        return [i[0] for i in np.argwhere(self.ownership == player + 1)]
     
     def get_countries_not_owned_by(self, player) -> List[int]:
         return np.argwhere(self.ownership != player + 1)
@@ -150,11 +150,24 @@ class game:
         self.players[player]["troops"] -= troops
         return False
 
+    def is_valid_action(self, action, player: int) -> bool:
+        action_type, src, dest, _ = action
+        troops = self._preprocess_action(action, player)
+        if action_type == 0:
+            return self._validate_deploy(dest, troops, player)
+        elif action_type == 1:
+            return self._validate_attack(src, dest, player)
+        elif action_type == 2:
+            return self._validate_move(src, dest, troops, player)
+        elif action_type == 3:
+            return self._validate_assist(src, dest, troops, player)
+        elif action_type == 4:
+            return self._validate_donate(player, dest, troops)
+        return False
 
     def take_valid_action(self, action, player: int) -> bool:
         action_type, src, dest, _ = action
         troops = self._preprocess_action(action, player)
-
         if action_type == 0:
             if self._validate_deploy(dest, troops, player):
                 return self.deploy(dest, troops, player)
@@ -192,6 +205,7 @@ class game:
         #check that the player owns the destination
         if self.get_owner(dest) != player:
             return False
+        print("ok")
         return True
     
     def _validate_move(self, src: int, dest: int, troops: int, player: int) -> bool:
